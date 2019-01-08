@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="app">
+
+        <!-- 使用局部组件 -->
+        <my-image></my-image>
+
+        <!-- 显示todo-title组件 -->
+        <todo-title></todo-title>
+
+        <!-- 文本框 -->
+        <div class="input">
+
+            <!-- 键盘按下事件 -->
+            <input @keydown.enter="add" v-model="content" type="text">
+
+        </div>
+
+        <!-- 批量操作按钮 -->
+        <div class="bbbtns">
+
+            <input v-model="isAll" @change="selectAll" type="checkbox">
+            <a @click.prevent="setAllComplete" href="">完成</a>
+            <a href="">删除</a>
+
+        </div>
+
+        <!-- 数据列表 -->
+        <ul>
+
+            <li :class="{complete: i.isComplete}" v-for="(i,k) in todoList">
+
+                <input @change="setChecked(k)" type="checkbox" v-model="i.isChecked">
+
+                {{ i.txt }}
+
+                <div class="btns">
+
+                    <a @click.prevent="setComplete(k)" href="">
+
+                        <template v-if="i.isComplete">
+                            取消
+                        </template>
+                        <template v-else>
+                            完成
+                        </template>
+
+                    </a>
+
+                    <a @click.prevent="md(k)" href="">删除</a>
+
+                </div>
+
+            </li>
+
+        </ul>
+
+        <!-- 统计数据 -->
+        <div class="number">
+
+            总数：<span>{{tj.total}}</span>
+            已完成：<span>{{tj.okCount}}</span>
+            未完成：<span>{{tj.notOkCount}}</span>
+
+        </div>
+
+    </div>
+</body>
+</html>
+<script>
+
+    Vue.component('todo-title',{
+
+        data:function() {
+
+            return {
+
+                title:'心愿列表'
+
+            }
+
+        },
+        template :
+        `
+            <div class="doto-title">
+                <h1> {{title}} </h1>
+            </div>
+
+        `
+        ,
+
+    })
+
+    // 定义局部组件
+    const myImage = {
+
+        data:function() {
+
+            return {
+
+                count:3,
+                src: "https://m.360buyimg.com/babel/jfs/t1/7797/6/12000/100477/5c32b81fE5f28f1ca/0d7a8935efc5bdf3.jpg"
+
+            }
+
+        },
+        template:
+        `
+            <div>
+                <img v-for="i in count" :src="src">
+            </div>
+
+        `
+
+    }
+
+    new Vue({
+
+        el:'#app',
+
+        components: {
+
+            myImage: myImage
+
+            },
+            methods: {
+
+                setAllComplete: function() {
+
+                    this.todoList.forEach(v=>{
+
+                        if(v.isChecked) {
+
+                            v.isComplete = true
+
+                        }
+
+                    })
+
+                },
+                setChecked: function(k) {
+
+                    // 寻找是否有一个未勾选
+                    let unchecked = this.todoList.find((v)=>!v.isChecked)
+
+                    // 如果有一个没有勾选返回false 否则返回true
+                    this.isAll = unchecked ? false : true
+
+                },
+                // 点击所有时
+                selectAll: function() {
+
+                    // 设置所有值和 this.isAll 相同
+                    this.todoList.forEach(v=>{
+
+                        v.isChecked = this.isAll
+
+                    })
+
+                },
+                setComplete: function(k) {
+
+                    this.todoList[k].isComplete = !this.todoList[k].isComplete
+
+                },
+                add: function() {
+
+                    if(this.content == '') {
+
+                        alert('内容不能为空')
+
+                    }else {
+
+                        // 加入到数组最后
+                        this.todoList.push({
+
+                            txt : this.content,
+                            isChecked : false,
+                            isComplete : false
+
+                        })
+
+                        this.content = ''
+
+                    }
+
+                },
+                md : function(k) {
+
+                    if(confirm('确定要删除吗？')) {
+
+                        this.todoList.splice(k,1)
+
+                    }
+
+                }
+
+            },
+            data: {
+
+                isAll: false,
+                content: '',
+                todoList: []
+
+            },
+            // 定义一个监听器
+            watch: {
+
+                todoList: {
+
+                    handler: function(newValue,oldValue){
+
+                        // 写到浏览器中
+                        localStorage.setItem('todoList' , JSON.stringify(newValue))
+
+                    },
+
+                    deep : true
+
+                }
+
+            },
+            // 计算属性：获取下面统计数据
+            computed: {
+
+                tj: function() {
+
+                    let ret = 0
+
+                    this.todoList.forEach(e => {
+
+                        if(e.isComplete)
+
+                            ret++
+
+                    });
+                    return {
+
+                        total: this.todoList.length,
+                        okCount: ret,
+                        notOkCount: this.todoList.length - ret
+
+                    }
+
+                }
+
+            },
+            // 创建完vue之后获取数据
+            created() {
+
+                // 从浏览器中获取数据
+                let t = localStorage.getItem('todoList')
+
+                // 设置到vue数组中
+                this.todoList = t ? JSON.parse(t) : []
+
+            }
+
+    })
+
+</script>
